@@ -317,7 +317,7 @@ def plot_selectivity_vs_score(df: pd.DataFrame, cfg: Config, n_labels: int = 12)
 
 
 def plot_pipeline_funnel(df: pd.DataFrame, cfg: Config) -> None:
-    """Save a marketing-friendly funnel chart showing the subtractive pipeline."""
+    """Save a funnel chart showing the subtractive pipeline."""
     n_total = len(df)
     n_structure = int(df["af_mean_plddt"].notna().sum()) if "af_mean_plddt" in df.columns else n_total
     n_non_human = len(df[df.get("is_host_homologous", 0) == 0])
