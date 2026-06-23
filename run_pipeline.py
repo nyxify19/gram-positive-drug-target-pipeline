@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Thin entry point for the drug-target discovery pipeline."""
 from pipeline.cli import main
 
 if __name__ == "__main__":
