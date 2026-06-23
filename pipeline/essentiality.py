@@ -1,4 +1,4 @@
-"""Gene essentiality scoring from DEG tables or a keyword heuristic."""
+"""Gene essentiality scoring from DEG tables or a keyword."""
 from __future__ import annotations
 
 import os
