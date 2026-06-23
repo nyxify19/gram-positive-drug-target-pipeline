@@ -183,7 +183,7 @@ All outputs are written to `--outdir` (default `drugtarget_out/`):
 | `selectivity_vs_score.png` | Host selectivity vs. composite score scatter plot |
 | `monte_carlo.png` | Ranking stability under Dirichlet weight perturbation |
 | `pipeline_funnel.png` | Subtractive genomics funnel chart (LinkedIn friendly) |
-| `proteome_landscape.png` | 2D t-SNE projection of the proteome highlighting top targets (LinkedIn friendly) |
+| `proteome_landscape.png` | 2D t-SNE projection of the proteome highlighting top targets |
 
 ---
 
