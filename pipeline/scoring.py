@@ -15,6 +15,39 @@ def _normalise_weights(weights: dict[str, float]) -> dict[str, float]:
     return {k: v / total for k, v in weights.items()} if total else dict(weights)
 
 
+def adjust_weights_for_constants(
+    df: pd.DataFrame,
+    weights: Optional[dict[str, float]] = None,
+) -> tuple[dict[str, float], list[str]]:
+    """Zero-out features whose column is constant (fallback/placeholder) and renormalize.
+
+    When an external tool (MMseqs2, P2Rank) is unavailable, the pipeline fills
+    the corresponding score with a neutral constant (e.g. 0.5).  Keeping its
+    weight in the composite sum wastes discriminating power.  This function
+    detects such columns and redistributes their weight to informative features.
+    """
+    weights = dict(weights or COMPOSITE_WEIGHTS)
+    dropped: list[str] = []
+    for term in list(weights):
+        col = SCORE_TERMS[term]
+        if col in df.columns and df[col].astype(float).std() < 1e-9:
+            LOGGER.warning(
+                "[scoring] '%s' (col=%s) is constant (%.4f); "
+                "redistributing its %.0f%% weight to informative features.",
+                term, col, float(df[col].astype(float).mean()),
+                100 * weights[term],
+            )
+            dropped.append(term)
+            del weights[term]
+    if dropped:
+        weights = _normalise_weights(weights)
+        LOGGER.info(
+            "[scoring] adjusted weights: %s",
+            ", ".join(f"{k}={v:.2%}" for k, v in weights.items()),
+        )
+    return weights, dropped
+
+
 def compute_composite_scores(
     df: pd.DataFrame, weights: Optional[dict[str, float]] = None
 ) -> pd.Series:
@@ -63,11 +96,16 @@ def assign_tiers(df: pd.DataFrame, cfg: Config) -> pd.Series:
     return tiers
 
 
-def run_monte_carlo_sensitivity(df: pd.DataFrame, cfg: Config) -> pd.DataFrame:
+def run_monte_carlo_sensitivity(
+    df: pd.DataFrame,
+    cfg: Config,
+    weights: Optional[dict[str, float]] = None,
+) -> pd.DataFrame:
     """Estimate ranking stability under Dirichlet-perturbed composite weights."""
     df = df.copy()
-    terms = list(COMPOSITE_WEIGHTS)
-    base = np.array([COMPOSITE_WEIGHTS[t] for t in terms], dtype=float)
+    active = weights or COMPOSITE_WEIGHTS
+    terms = list(active)
+    base = np.array([active[t] for t in terms], dtype=float)
     base /= base.sum()
     feature_matrix = np.column_stack(
         [df[SCORE_TERMS[t]].astype(float) for t in terms]

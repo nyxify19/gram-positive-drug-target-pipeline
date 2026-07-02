@@ -8,6 +8,7 @@ import shutil
 import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,9 @@ from pipeline.config import COMPOSITE_WEIGHTS, Config, FEATURE_COLS, LOGGER
 
 
 def write_manifest(
-    cfg: Config, df: pd.DataFrame, metrics: dict, feature_report: dict
+    cfg: Config, df: pd.DataFrame, metrics: dict, feature_report: dict,
+    active_weights: Optional[dict[str, float]] = None,
+    dropped_features: Optional[list[str]] = None,
 ) -> None:
     """Write a JSON manifest capturing inputs, environment and results."""
     import Bio
@@ -39,7 +42,9 @@ def write_manifest(
             "scikit_learn": sklearn.__version__,
             "biopython": Bio.__version__,
         },
-        "composite_weights": COMPOSITE_WEIGHTS,
+        "composite_weights_original": COMPOSITE_WEIGHTS,
+        "composite_weights_active": active_weights or COMPOSITE_WEIGHTS,
+        "dropped_constant_features": dropped_features or [],
         "feature_cols": FEATURE_COLS,
         "feature_availability": feature_report,
         "tier_distribution": (

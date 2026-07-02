@@ -24,6 +24,7 @@ from pipeline.essentiality import add_essentiality
 from pipeline.pockets import add_pocket_druggability
 from pipeline.classifier import train_druggability_model
 from pipeline.scoring import (
+    adjust_weights_for_constants,
     assign_tiers,
     compute_composite_scores,
     rank_targets,
@@ -44,6 +45,7 @@ from pipeline.visualization import (
     plot_proteome_landscape,
 )
 from pipeline.manifest import write_manifest
+from pipeline.validation import validate_tier_enrichment
 
 
 def run_pipeline(cfg: Config) -> pd.DataFrame:
@@ -72,14 +74,17 @@ def run_pipeline(cfg: Config) -> pd.DataFrame:
     feature_report = build_feature_availability_report(df)
     plot_feature_correlation(df, cfg)
 
-    df["composite_target_score"] = compute_composite_scores(df)
+    active_weights, dropped_features = adjust_weights_for_constants(df)
+    df["composite_target_score"] = compute_composite_scores(df, weights=active_weights)
     df["priority_tier"] = assign_tiers(df, cfg)
     plot_tier_distribution(df, cfg)
 
-    df = run_monte_carlo_sensitivity(df, cfg)
+    df = run_monte_carlo_sensitivity(df, cfg, weights=active_weights)
     plot_monte_carlo(df, cfg)
 
     df, _tiers, top_targets = rank_targets(df, cfg)
+    validation_results = validate_tier_enrichment(df, cfg)
+    metrics["weight_validation"] = validation_results
     plot_top_targets(top_targets, cfg)
     plot_radar_charts(top_targets, cfg)
     plot_selectivity_vs_score(df, cfg)
@@ -97,7 +102,7 @@ def run_pipeline(cfg: Config) -> pd.DataFrame:
             "another program (e.g. Excel) or locked by cloud sync (OneDrive). "
             "Close it, or choose a different location with --outdir."
         ) from exc
-    write_manifest(cfg, df, metrics, feature_report)
+    write_manifest(cfg, df, metrics, feature_report, active_weights, dropped_features)
     LOGGER.info("Pipeline complete -> %s", output_csv)
     return df
 

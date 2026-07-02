@@ -49,6 +49,7 @@ Starting from a set of NCBI taxonomy IDs, the pipeline:
 ### Design Highlights
 
 - **Graceful degradation** — every external tool (MMseqs2, P2Rank, fpocket) is optional; the pipeline warns and falls back automatically
+- **Adaptive scoring** — if a tool is missing and falls back to a neutral constant, its weight is automatically redistributed to preserve discriminating power
 - **Disk caching** — AlphaFold and pocket results are SQLite-cached; re-runs skip already-fetched data
 - **Reproducibility** — a JSON manifest captures exact versions, config, and metrics for every run
 - **5-tier positive labels** — DrugBank hits, PDB+enzyme, antibiotic keywords, virulence terms, and functional text evidence
@@ -146,6 +147,7 @@ gram-positive-drug-target-pipeline/
 │   ├── pockets.py               #   P2Rank / fpocket pocket detection
 │   ├── classifier.py            #   ML druggability model (XGBoost / RF)
 │   ├── scoring.py               #   Composite scores, tiers, Monte Carlo
+│   ├── validation.py            #   Fisher's exact test against curated targets
 │   ├── visualization.py         #   Diagnostic plots + QC reporting
 │   ├── manifest.py              #   Reproducibility JSON manifest
 │   └── cli.py                   #   Argument parsing + pipeline orchestrator
@@ -183,7 +185,7 @@ All outputs are written to `--outdir` (default `drugtarget_out/`):
 | `selectivity_vs_score.png` | Host selectivity vs. composite score scatter plot |
 | `monte_carlo.png` | Ranking stability under Dirichlet weight perturbation |
 | `pipeline_funnel.png` | Subtractive genomics funnel chart (LinkedIn friendly) |
-| `proteome_landscape.png` | 2D t-SNE projection of the proteome highlighting top targets |
+| `proteome_landscape.png` | 2D t-SNE projection of the proteome highlighting top targets (LinkedIn friendly) |
 
 ---
 
@@ -202,6 +204,8 @@ Targets are ranked by a weighted composite score combining seven evidence axes:
 | Functional annotation present | 3% | UniProt function field |
 
 Ranking stability is validated via **Monte Carlo simulation** (1000 Dirichlet-perturbed weight samples), producing per-protein `rank_std` and `tier_stability` metrics.
+
+Biological validity is evaluated post-hoc via **Fisher's exact test**, which calculates the statistical enrichment of ~30 curated known antibacterial targets (e.g., DNA gyrase, Mur ligases, PBPs) within the Tier 1 cohort to confirm the weights produce biologically meaningful rankings.
 
 ---
 

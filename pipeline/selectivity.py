@@ -82,6 +82,7 @@ def add_host_selectivity(df: pd.DataFrame, cfg: Config) -> pd.DataFrame:
     df["human_qcov"] = 0.0
     df["is_host_homologous"] = 0
     df["host_selectivity"] = 0.5
+    df["host_selectivity_source"] = "placeholder"
 
     mmseqs_bin = find_tool("mmseqs", "mmseqs.bat")
     if not mmseqs_bin:
@@ -102,6 +103,7 @@ def add_host_selectivity(df: pd.DataFrame, cfg: Config) -> pd.DataFrame:
     best_hits = _run_host_homology_search(df, mmseqs_bin, host_fasta, cfg)
     if best_hits is None:
         return df
+    df["host_selectivity_source"] = "mmseqs2"
     if best_hits.empty:
         LOGGER.info("[host] no human hits found (fully selective candidate set).")
         df["host_selectivity"] = 1.0

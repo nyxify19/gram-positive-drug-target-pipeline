@@ -1,0 +1,36 @@
+# Byte-compiled / optimised
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Pipeline outputs and caches
+drugtarget_out/
+*.db
+*.db-journal
+grampos_proteome_cache.csv
+grampos_proteome_cache.csv.meta.json
+mmseqs-win64/
+p2rank_2.4.1/
+*.tar.gz
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
